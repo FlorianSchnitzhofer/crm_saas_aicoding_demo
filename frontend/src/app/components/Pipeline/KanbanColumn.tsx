@@ -1,13 +1,13 @@
 import { useDrop } from "react-dnd";
-import { DealStage, Deal, stageConfig } from "@/data/mockData";
+import type { Stage, DealSummary } from "@/types/api";
 import { DealCard } from "./DealCard";
 import { motion } from "motion/react";
 
 interface KanbanColumnProps {
-  stage: DealStage;
-  deals: Deal[];
-  onDealClick: (deal: Deal) => void;
-  onDrop: (dealId: string, newStage: DealStage) => void;
+  stage: Stage;
+  deals: DealSummary[];
+  onDealClick: (deal: DealSummary) => void;
+  onDrop: (dealId: string, newStageId: string) => void;
 }
 
 export function KanbanColumn({
@@ -18,9 +18,9 @@ export function KanbanColumn({
 }: KanbanColumnProps) {
   const [{ isOver }, drop] = useDrop({
     accept: "DEAL",
-    drop: (item: { id: string; stage: DealStage }) => {
-      if (item.stage !== stage) {
-        onDrop(item.id, stage);
+    drop: (item: { id: string; stage_id: string }) => {
+      if (item.stage_id !== stage.id) {
+        onDrop(item.id, stage.id);
       }
     },
     collect: (monitor) => ({
@@ -28,15 +28,14 @@ export function KanbanColumn({
     }),
   });
 
-  const totalValue = deals.reduce((sum, deal) => sum + deal.value, 0);
-  const config = stageConfig[stage];
+  const totalValue = deals.reduce((sum, deal) => sum + deal.value.amount, 0);
 
   return (
     <div className="flex-shrink-0 w-80">
       <div className="bg-gray-50 rounded-lg p-4 h-full flex flex-col">
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-semibold text-gray-900">{config.label}</h3>
+            <h3 className="font-semibold text-gray-900">{stage.name}</h3>
             <span className="text-sm text-gray-500">{deals.length}</span>
           </div>
           <div className="text-sm text-gray-600">

@@ -6,8 +6,11 @@ import {
   CheckSquare,
   BarChart3,
   Settings,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/app/components/ui/utils";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/app/components/ui/button";
 
 const navItems = [
   { path: "/", label: "Pipeline", icon: LayoutDashboard },
@@ -20,6 +23,7 @@ const navItems = [
 
 export function Sidebar() {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <aside className="w-64 border-r border-gray-200 bg-white h-screen flex flex-col">
@@ -55,17 +59,26 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center gap-3 px-3 py-2">
+        <div className="flex items-center gap-3 px-3 py-2 mb-2">
           <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
-            JD
+            {user?.name.substring(0, 2).toUpperCase() || "JD"}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">
-              John Doe
+              {user?.name || "John Doe"}
             </p>
-            <p className="text-xs text-gray-500 truncate">Sales Manager</p>
+            <p className="text-xs text-gray-500 truncate">{user?.role || "Sales Manager"}</p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start text-gray-700 hover:bg-gray-100"
+          onClick={logout}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Logout
+        </Button>
       </div>
     </aside>
   );

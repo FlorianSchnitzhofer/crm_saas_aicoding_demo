@@ -1,15 +1,55 @@
-import { mockDeals } from "@/data/mockData";
+import { useState, useEffect } from "react";
+import type { Deal } from "@/types/api";
+import { apiClient } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { DollarSign, Target, TrendingUp, Users } from "lucide-react";
+import { LoadingState } from "../Common/LoadingState";
+import { Alert, AlertDescription } from "@/app/components/ui/alert";
 
 export function InsightsView() {
-  const totalValue = mockDeals.reduce((sum, deal) => sum + deal.value, 0);
-  const closedDeals = mockDeals.filter((d) => d.stage === "closed");
-  const closedValue = closedDeals.reduce((sum, deal) => sum + deal.value, 0);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadDeals();
+  }, []);
+
+  const loadDeals = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await apiClient.getDeals();
+      setDeals(response.data);
+    } catch (err) {
+      console.error("Failed to load deals:", err);
+      setError(err instanceof Error ? err.message : "Failed to load insights");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const totalValue = deals.reduce((sum, deal) => sum + deal.value.amount, 0);
+  const wonDeals = deals.filter((d) => d.status === "won");
+  const wonValue = wonDeals.reduce((sum, deal) => sum + deal.value.amount, 0);
   const conversionRate =
-    mockDeals.length > 0
-      ? ((closedDeals.length / mockDeals.length) * 100).toFixed(1)
-      : 0;
+    deals.length > 0
+      ? ((wonDeals.length / deals.length) * 100).toFixed(1)
+      : "0";
 
   const stats = [
     {
@@ -21,14 +61,14 @@ export function InsightsView() {
     },
     {
       title: "Deals in Pipeline",
-      value: mockDeals.length.toString(),
+      value: deals.length.toString(),
       icon: Target,
       description: "Active opportunities",
       trend: "+3",
     },
     {
       title: "Closed Deals",
-      value: `$${closedValue.toLocaleString()}`,
+      value: `$${wonValue.toLocaleString()}`,
       icon: TrendingUp,
       description: "This month",
       trend: "+8.2%",
@@ -41,6 +81,26 @@ export function InsightsView() {
       trend: "+2.1%",
     },
   ];
+
+  // Group deals by stage for distribution
+  const dealsByStage = deals.reduce((acc, deal) => {
+    acc[deal.stage_id] = (acc[deal.stage_id] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  // Group deals by owner for top performers
+  const dealsByOwner = deals.reduce((acc, deal) => {
+    if (!acc[deal.owner_id]) {
+      acc[deal.owner_id] = { count: 0, value: 0 };
+    }
+    acc[deal.owner_id].count++;
+    acc[deal.owner_id].value += deal.value.amount;
+    return acc;
+  }, {} as Record<string, { count: number; value: number }>);
+
+  const topOwners = Object.entries(dealsByOwner)
+    .sort(([, a], [, b]) => b.value - a.value)
+    .slice(0, 3);
 
   return (
     <div className="p-6">
@@ -78,34 +138,29 @@ export function InsightsView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {["lead", "qualified", "proposal", "negotiation", "closed"].map(
-                (stage) => {
-                  const stageDeals = mockDeals.filter((d) => d.stage === stage);
-                  const percentage =
-                    mockDeals.length > 0
-                      ? (stageDeals.length / mockDeals.length) * 100
-                      : 0;
+              {Object.entries(dealsByStage).map(([stageId, count]) => {
+                const percentage =
+                  deals.length > 0 ? (count / deals.length) * 100 : 0;
 
-                  return (
-                    <div key={stage}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium capitalize">
-                          {stage}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          {stageDeals.length} deals
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
+                return (
+                  <div key={stageId}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium capitalize">
+                        {stageId}
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        {count} deals
+                      </span>
                     </div>
-                  );
-                }
-              )}
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -116,37 +171,27 @@ export function InsightsView() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {["John Doe", "Jane Smith", "Mike Brown"].map((owner, index) => {
-                const ownerDeals = mockDeals.filter(
-                  (d) => d.owner.name === owner
-                );
-                const ownerValue = ownerDeals.reduce(
-                  (sum, deal) => sum + deal.value,
-                  0
-                );
-
-                return (
-                  <div
-                    key={owner}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-medium">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{owner}</p>
-                        <p className="text-xs text-gray-500">
-                          {ownerDeals.length} deals
-                        </p>
-                      </div>
+              {topOwners.map(([ownerId, data], index) => (
+                <div
+                  key={ownerId}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-medium">
+                      {index + 1}
                     </div>
-                    <div className="text-sm font-semibold">
-                      ${ownerValue.toLocaleString()}
+                    <div>
+                      <p className="text-sm font-medium">{ownerId}</p>
+                      <p className="text-xs text-gray-500">
+                        {data.count} deals
+                      </p>
                     </div>
                   </div>
-                );
-              })}
+                  <div className="text-sm font-semibold">
+                    ${data.value.toLocaleString()}
+                  </div>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
