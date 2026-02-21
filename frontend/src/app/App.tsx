@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/i18n/config';
 import { Sidebar } from '@/app/components/Sidebar';
@@ -7,366 +7,106 @@ import { DashboardView } from '@/app/components/DashboardView';
 import { PipelineView } from '@/app/components/PipelineView';
 import { ContactsView } from '@/app/components/ContactsView';
 import { CompaniesView } from '@/app/components/CompaniesView';
+import { ActivitiesView } from '@/app/components/ActivitiesView';
+import { LoginView } from '@/app/components/LoginView';
 
-// Mock data types
-interface Deal {
-  id: string;
-  name: string;
-  value: number;
-  company: string;
-  owner: string;
-  closeDate: string;
-  stage: string;
-  probability: number;
-  description: string;
-}
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
-interface Contact {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  company: string;
-  position: string;
-  department: string;
-  owner: string;
-}
-
-interface Company {
-  id: string;
-  name: string;
-  industry: string;
-  website: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  country: string;
-  employees: number;
-  revenue: number;
-  owner: string;
-}
-
-const initialDeals: Deal[] = [
-  {
-    id: '1',
-    name: 'Enterprise Software License',
-    value: 45000,
-    company: 'Acme Corp',
-    owner: 'John Doe',
-    closeDate: '2026-02-15',
-    stage: 'qualified',
-    probability: 70,
-    description: 'Annual license for enterprise software platform',
-  },
-  {
-    id: '2',
-    name: 'Marketing Campaign',
-    value: 12000,
-    company: 'Tech Solutions',
-    owner: 'Jane Smith',
-    closeDate: '2026-02-20',
-    stage: 'contact',
-    probability: 50,
-    description: 'Digital marketing campaign for Q1',
-  },
-  {
-    id: '3',
-    name: 'Cloud Migration',
-    value: 78000,
-    company: 'Global Inc',
-    owner: 'Mike Johnson',
-    closeDate: '2026-03-01',
-    stage: 'demo',
-    probability: 60,
-    description: 'Migration to cloud infrastructure',
-  },
-  {
-    id: '4',
-    name: 'Website Redesign',
-    value: 25000,
-    company: 'StartUp Ltd',
-    owner: 'Sarah Williams',
-    closeDate: '2026-02-28',
-    stage: 'proposal',
-    probability: 75,
-    description: 'Complete website redesign and development',
-  },
-  {
-    id: '5',
-    name: 'Custom Development',
-    value: 95000,
-    company: 'Innovation Co',
-    owner: 'Tom Brown',
-    closeDate: '2026-03-15',
-    stage: 'negotiation',
-    probability: 85,
-    description: 'Custom software development project',
-  },
-  {
-    id: '6',
-    name: 'SaaS Subscription',
-    value: 18000,
-    company: 'Digital Agency',
-    owner: 'Emily Davis',
-    closeDate: '2026-01-30',
-    stage: 'won',
-    probability: 100,
-    description: 'Annual SaaS platform subscription',
-  },
-  {
-    id: '7',
-    name: 'Training Program',
-    value: 8500,
-    company: 'Learning Hub',
-    owner: 'John Doe',
-    closeDate: '2026-02-10',
-    stage: 'qualified',
-    probability: 65,
-    description: 'Employee training and development program',
-  },
-  {
-    id: '8',
-    name: 'Data Analytics Platform',
-    value: 62000,
-    company: 'Data Corp',
-    owner: 'Jane Smith',
-    closeDate: '2026-03-20',
-    stage: 'demo',
-    probability: 70,
-    description: 'Implementation of data analytics solution',
-  },
-];
-
-const initialContacts: Contact[] = [
-  {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Smith',
-    email: 'john.smith@acme.com',
-    phone: '+1 555-0101',
-    company: 'Acme Corp',
-    position: 'CTO',
-    department: 'Technology',
-    owner: 'John Doe',
-  },
-  {
-    id: '2',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    email: 'sarah.j@techsolutions.com',
-    phone: '+1 555-0102',
-    company: 'Tech Solutions',
-    position: 'Marketing Director',
-    department: 'Marketing',
-    owner: 'Jane Smith',
-  },
-  {
-    id: '3',
-    firstName: 'Michael',
-    lastName: 'Chen',
-    email: 'm.chen@globalinc.com',
-    phone: '+1 555-0103',
-    company: 'Global Inc',
-    position: 'VP of Operations',
-    department: 'Operations',
-    owner: 'Mike Johnson',
-  },
-];
-
-const initialCompanies: Company[] = [
-  {
-    id: '1',
-    name: 'Acme Corp',
-    industry: 'Technology',
-    website: 'acmecorp.com',
-    email: 'info@acmecorp.com',
-    phone: '+1 555-1000',
-    address: '123 Tech Street',
-    city: 'San Francisco',
-    country: 'USA',
-    employees: 500,
-    revenue: 50000000,
-    owner: 'John Doe',
-  },
-  {
-    id: '2',
-    name: 'Tech Solutions',
-    industry: 'Software',
-    website: 'techsolutions.com',
-    email: 'contact@techsolutions.com',
-    phone: '+1 555-2000',
-    address: '456 Innovation Ave',
-    city: 'Austin',
-    country: 'USA',
-    employees: 200,
-    revenue: 25000000,
-    owner: 'Jane Smith',
-  },
-  {
-    id: '3',
-    name: 'Global Inc',
-    industry: 'Consulting',
-    website: 'globalinc.com',
-    email: 'hello@globalinc.com',
-    phone: '+1 555-3000',
-    address: '789 Business Blvd',
-    city: 'New York',
-    country: 'USA',
-    employees: 1000,
-    revenue: 100000000,
-    owner: 'Mike Johnson',
-  },
-];
+type Deal = { id: string; name: string; value: number; company: string; owner: string; closeDate: string; stage: string; probability: number; description: string };
+type Contact = { id: string; firstName: string; lastName: string; email: string; phone: string; company: string; position: string; department: string; owner: string };
+type Company = { id: string; name: string; industry: string; website: string; email: string; phone: string; address: string; city: string; country: string; employees: number; revenue: number; owner: string };
+type Activity = { id: string; subject: string; status: string; dueDate: string; ownerName: string };
 
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [language, setLanguage] = useState<'en' | 'de'>('en');
   const [activeView, setActiveView] = useState('dashboard');
-  
-  const [deals, setDeals] = useState<Deal[]>(initialDeals);
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts);
-  const [companies, setCompanies] = useState<Company[]>(initialCompanies);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [userName, setUserName] = useState('User');
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
 
   useEffect(() => {
-    // Apply theme to document
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
 
   useEffect(() => {
-    // Change language
     i18n.changeLanguage(language);
   }, [language]);
 
-  const handleThemeChange = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  const authFetch = async (path: string, init?: RequestInit) => {
+    const response = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
+        ...(init?.headers || {}),
+      },
+    });
+    if (!response.ok) throw new Error(await response.text());
+    return response.status === 204 ? null : response.json();
   };
 
-  const handleLanguageChange = (lang: 'en' | 'de') => {
-    setLanguage(lang);
+  const loadData = async () => {
+    if (!token) return;
+    const [me, dealsData, contactsData, companiesData, activitiesData] = await Promise.all([
+      authFetch('/auth/me'),
+      authFetch('/deals'),
+      authFetch('/contacts'),
+      authFetch('/companies'),
+      authFetch('/activities'),
+    ]);
+    setUserName(me.full_name);
+    setDeals(dealsData.map((d: any) => ({ id: String(d.id), name: d.name, value: d.value, company: d.company_name || '', owner: d.owner_name || '', closeDate: d.close_date || '', stage: d.stage, probability: d.probability, description: d.description || '' })));
+    setContacts(contactsData.map((c: any) => ({ id: String(c.id), firstName: c.first_name, lastName: c.last_name, email: c.email || '', phone: c.phone || '', company: c.company_name || '', position: c.position || '', department: c.department || '', owner: userName })));
+    setCompanies(companiesData.map((c: any) => ({ id: String(c.id), name: c.name, industry: c.industry || '', website: c.website || '', email: c.email || '', phone: c.phone || '', address: c.address || '', city: c.city || '', country: c.country || '', employees: c.employees || 0, revenue: c.revenue || 0, owner: userName })));
+    setActivities(activitiesData.map((a: any) => ({ id: String(a.id), subject: a.subject, status: a.status, dueDate: a.due_date || '', ownerName: a.owner_name || '' })));
   };
 
-  // Deal handlers
-  const handleAddDeal = (deal: Omit<Deal, 'id'>) => {
-    const newDeal = {
-      ...deal,
-      id: Date.now().toString(),
-    };
-    setDeals([...deals, newDeal]);
-  };
+  useEffect(() => { loadData().catch(() => setToken(null)); }, [token]);
 
-  const handleEditDeal = (updatedDeal: Deal) => {
-    setDeals(deals.map((deal) => (deal.id === updatedDeal.id ? updatedDeal : deal)));
-  };
-
-  // Contact handlers
-  const handleAddContact = (contact: Omit<Contact, 'id'>) => {
-    const newContact = {
-      ...contact,
-      id: Date.now().toString(),
-    };
-    setContacts([...contacts, newContact]);
-  };
-
-  const handleEditContact = (updatedContact: Contact) => {
-    setContacts(contacts.map((contact) => (contact.id === updatedContact.id ? updatedContact : contact)));
-  };
-
-  const handleDeleteContact = (id: string) => {
-    setContacts(contacts.filter((contact) => contact.id !== id));
-  };
-
-  // Company handlers
-  const handleAddCompany = (company: Omit<Company, 'id'>) => {
-    const newCompany = {
-      ...company,
-      id: Date.now().toString(),
-    };
-    setCompanies([...companies, newCompany]);
-  };
-
-  const handleEditCompany = (updatedCompany: Company) => {
-    setCompanies(companies.map((company) => (company.id === updatedCompany.id ? updatedCompany : company)));
-  };
-
-  const handleDeleteCompany = (id: string) => {
-    setCompanies(companies.filter((company) => company.id !== id));
-  };
-
-  const renderView = () => {
-    switch (activeView) {
-      case 'dashboard':
-        return <DashboardView />;
-      case 'deals':
-        return <PipelineView deals={deals} onAddDeal={handleAddDeal} onEditDeal={handleEditDeal} />;
-      case 'contacts':
-        return (
-          <ContactsView
-            contacts={contacts}
-            onAddContact={handleAddContact}
-            onEditContact={handleEditContact}
-            onDeleteContact={handleDeleteContact}
-          />
-        );
-      case 'companies':
-        return (
-          <CompaniesView
-            companies={companies}
-            onAddCompany={handleAddCompany}
-            onEditCompany={handleEditCompany}
-            onDeleteCompany={handleDeleteCompany}
-          />
-        );
-      case 'activities':
-        return (
-          <div className="flex-1 p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Activities</h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Activities view coming soon...
-            </p>
-          </div>
-        );
-      case 'reports':
-        return (
-          <div className="flex-1 p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Reports view coming soon...
-            </p>
-          </div>
-        );
-      case 'settings':
-        return (
-          <div className="flex-1 p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Settings</h2>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Settings view coming soon...
-            </p>
-          </div>
-        );
-      default:
-        return <DashboardView />;
+  const handleLogin = async (email: string, password: string) => {
+    setAuthError(null);
+    const form = new URLSearchParams({ username: email, password });
+    try {
+      const response = await fetch(`${API_BASE}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form });
+      if (!response.ok) throw new Error('Invalid credentials');
+      const data = await response.json();
+      localStorage.setItem('token', data.access_token);
+      setToken(data.access_token);
+    } catch {
+      setAuthError('Login failed. Register a user via API first if needed.');
     }
   };
+
+  const filtered = useMemo(() => {
+    if (!searchTerm.trim()) return { deals, contacts, companies };
+    const term = searchTerm.toLowerCase();
+    return {
+      deals: deals.filter((d) => `${d.name} ${d.company}`.toLowerCase().includes(term)),
+      contacts: contacts.filter((c) => `${c.firstName} ${c.lastName} ${c.email}`.toLowerCase().includes(term)),
+      companies: companies.filter((c) => `${c.name} ${c.industry}`.toLowerCase().includes(term)),
+    };
+  }, [searchTerm, deals, contacts, companies]);
+
+  if (!token) return <LoginView onLogin={handleLogin} error={authError} />;
 
   return (
     <I18nextProvider i18n={i18n}>
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
         <Sidebar activeView={activeView} onViewChange={setActiveView} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header
-            theme={theme}
-            language={language}
-            onThemeChange={handleThemeChange}
-            onLanguageChange={handleLanguageChange}
-          />
+          <Header theme={theme} language={language} currentUserInitials={userName.split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase()} onThemeChange={() => setTheme((prev) => prev === 'light' ? 'dark' : 'light')} onLanguageChange={setLanguage} onSearchChange={setSearchTerm} onLogout={() => { localStorage.removeItem('token'); setToken(null); }} />
           <div className="flex-1 overflow-hidden">
-            {renderView()}
+            {activeView === 'dashboard' && <DashboardView />}
+            {activeView === 'deals' && <PipelineView deals={filtered.deals} onAddDeal={async (deal) => { await authFetch('/deals', { method: 'POST', body: JSON.stringify({ name: deal.name, value: deal.value, stage: deal.stage, probability: deal.probability, description: deal.description, close_date: deal.closeDate || null }) }); await loadData(); }} onEditDeal={() => {}} />}
+            {activeView === 'contacts' && <ContactsView contacts={filtered.contacts} onAddContact={async (contact) => { await authFetch('/contacts', { method: 'POST', body: JSON.stringify({ first_name: contact.firstName, last_name: contact.lastName, email: contact.email, phone: contact.phone, position: contact.position, department: contact.department }) }); await loadData(); }} onEditContact={() => {}} onDeleteContact={async (id) => { await authFetch(`/contacts/${id}`, { method: 'DELETE' }); await loadData(); }} />}
+            {activeView === 'companies' && <CompaniesView companies={filtered.companies} onAddCompany={async (company) => { await authFetch('/companies', { method: 'POST', body: JSON.stringify({ name: company.name, industry: company.industry, website: company.website, email: company.email, phone: company.phone, address: company.address, city: company.city, country: company.country, employees: company.employees, revenue: company.revenue }) }); await loadData(); }} onEditCompany={() => {}} onDeleteCompany={() => {}} />}
+            {activeView === 'activities' && <ActivitiesView activities={activities} />}
           </div>
         </div>
       </div>
