@@ -1,0 +1,61 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  line-height: 1.4;
+}
+
+body {
+  margin: 0;
+  background: #f5f7fb;
+  color: #132038;
+}
+
+header {
+  padding: 2rem;
+  background: #102a43;
+  color: white;
+}
+
+main {
+  max-width: 960px;
+  margin: 1.5rem auto;
+  padding: 0 1rem 2rem;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.75rem;
+}
+
+label { display: flex; flex-direction: column; gap: 0.3rem; font-weight: 600; }
+input, textarea, button {
+  font: inherit;
+  padding: 0.55rem;
+  border: 1px solid #c7d1e2;
+  border-radius: 8px;
+}
+
+button {
+  margin-top: 1rem;
+  background: #1f6feb;
+  color: white;
+  cursor: pointer;
+  border: 0;
+}
+
+#summary p { margin: 0.2rem 0; }
+.actions { display: flex; gap: 0.5rem; }
+
+@media print {
+  header, form, .actions { display: none !important; }
+  body, .card { background: white; box-shadow: none; }
+}
