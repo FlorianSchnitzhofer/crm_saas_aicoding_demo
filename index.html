@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReqPOOL Estimation Manager</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>ReqPOOL Estimation Manager</h1>
+    <p>Onlineplattform zur parametrisierten Aufwandsschätzung inklusive Scope-Beschreibung.</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Projektparameter</h2>
+      <form id="estimationForm">
+        <div class="grid">
+          <label>Pages
+            <input type="number" min="0" value="10" id="pages" required />
+          </label>
+          <label>Use Cases
+            <input type="number" min="0" value="25" id="useCases" required />
+          </label>
+          <label>Business Objects
+            <input type="number" min="0" value="15" id="businessObjects" required />
+          </label>
+          <label>Interfaces
+            <input type="number" min="0" value="5" id="interfaces" required />
+          </label>
+          <label>Batches
+            <input type="number" min="0" value="2" id="batches" required />
+          </label>
+          <label>Languages
+            <input type="number" min="1" value="2" id="languages" required />
+          </label>
+          <label>Roles
+            <input type="number" min="1" value="4" id="roles" required />
+          </label>
+          <label>User
+            <input type="number" min="1" value="100" id="users" required />
+          </label>
+        </div>
+
+        <label>Kurze Projektskizze
+          <textarea id="projectSketch" rows="6" placeholder="Beschreiben Sie Ziele, Kontext und wichtigste Anforderungen..." required></textarea>
+        </label>
+
+        <fieldset>
+          <legend>Parametergewichtung (Personentage)</legend>
+          <div class="grid">
+            <label>PT pro Page <input type="number" step="0.1" value="0.6" id="wPages" /></label>
+            <label>PT pro Use Case <input type="number" step="0.1" value="1.2" id="wUseCases" /></label>
+            <label>PT pro Business Object <input type="number" step="0.1" value="0.8" id="wBusinessObjects" /></label>
+            <label>PT pro Interface <input type="number" step="0.1" value="2.3" id="wInterfaces" /></label>
+            <label>PT pro Batch <input type="number" step="0.1" value="1.5" id="wBatches" /></label>
+            <label>PT pro Sprache <input type="number" step="0.1" value="1.1" id="wLanguages" /></label>
+            <label>PT pro Rolle <input type="number" step="0.1" value="0.9" id="wRoles" /></label>
+            <label>PT pro 100 User <input type="number" step="0.1" value="0.5" id="wUsers" /></label>
+          </div>
+        </fieldset>
+
+        <button type="submit">Schätzung erstellen</button>
+      </form>
+    </section>
+
+    <section class="card" id="resultSection" hidden>
+      <h2>Ergebnis</h2>
+      <div id="summary"></div>
+      <h3>Scope-Beschreibung</h3>
+      <article id="scope"></article>
+      <div class="actions">
+        <button id="downloadPdf">Als PDF speichern</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
